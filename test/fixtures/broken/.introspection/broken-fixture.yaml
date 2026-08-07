@@ -1,0 +1,5 @@
+name: broken-fixture
+path: .
+description: Deliberately invalid recipe used to test the failure path
+runtime:
+  llm_mode: managed
