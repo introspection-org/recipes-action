@@ -30,7 +30,7 @@ try {
 } catch (err) {
   annotate(
     "error",
-    `pi-recipes-action: could not read the recipe-check report (${oneLine(
+    `recipes-action: could not read the recipe-check report (${oneLine(
       err.message
     )}). The checker may have crashed before producing output.`
   );
@@ -40,8 +40,16 @@ try {
 const diagnostics = Array.isArray(report.diagnostics) ? report.diagnostics : [];
 const errors = diagnostics.filter((d) => d.severity === "error");
 const warnings = diagnostics.filter((d) => d.severity === "warning");
-const valid = report.valid !== false && errors.length === 0;
-const pkg = report.package_name || "<unknown recipe>";
+const valid = errors.length === 0;
+// The checker reports every Recipe it discovered under the work dir rather
+// than one package, so the header names the set, not a single manifest.
+const manifests = Array.isArray(report.manifests) ? report.manifests : [];
+const pkg = manifests.length
+  ? manifests.map((m) => m.name).filter(Boolean).join(", ")
+  : "<no recipes discovered>";
+// `check_id` is the current field; `code` is kept as a fallback so an older
+// report still annotates rather than silently dropping its title.
+const codeOf = (d) => d.check_id || d.code || "";
 const fileOf = (d) =>
   d.path ? (recipeDir ? `${recipeDir}/${d.path}` : d.path) : "";
 const locOf = (d) => {
@@ -58,7 +66,7 @@ for (const d of diagnostics) {
   if (file) props.push(`file=${file}`);
   if (d.span && d.span.line) props.push(`line=${d.span.line}`);
   if (d.span && d.span.column) props.push(`col=${d.span.column}`);
-  if (d.code) props.push(`title=${oneLine(d.code)}`);
+  if (codeOf(d)) props.push(`title=${oneLine(codeOf(d))}`);
   const message = d.help
     ? `${oneLine(d.message)} — ${oneLine(d.help)}`
     : oneLine(d.message);
@@ -71,13 +79,13 @@ const cell = (value) =>
     .replace(/\|/g, "\\|")
     .replace(/\r?\n/g, " ");
 const md = [];
-md.push(`## Pi recipe check — ${valid ? "✅ passed" : "❌ failed"}`);
+md.push(`## Recipe check — ${valid ? "✅ passed" : "❌ failed"}`);
 md.push("");
 md.push(
   `**Recipe:** \`${cell(pkg)}\` &nbsp;·&nbsp; ` +
     `**Errors:** ${errors.length} &nbsp;·&nbsp; ` +
     `**Warnings:** ${warnings.length} &nbsp;·&nbsp; ` +
-    `**Profile:** \`${cell(report.profile || "")}\``
+    `**Recipes:** ${manifests.length}`
 );
 md.push("");
 if (diagnostics.length) {
@@ -86,21 +94,13 @@ if (diagnostics.length) {
   for (const d of diagnostics) {
     const icon = d.severity === "error" ? "🔴 error" : "🟡 warning";
     md.push(
-      `| ${icon} | \`${cell(d.code)}\` | \`${cell(locOf(d) || "—")}\` | ${cell(
+      `| ${icon} | \`${cell(codeOf(d))}\` | \`${cell(locOf(d) || "—")}\` | ${cell(
         d.message
       )} |`
     );
   }
 } else {
   md.push("No diagnostics. 🎉");
-}
-const resources = report.resources || {};
-const resStr = Object.keys(resources)
-  .map((key) => `${key}: ${resources[key]}`)
-  .join(" · ");
-if (resStr) {
-  md.push("");
-  md.push(`**Resources:** ${resStr}`);
 }
 md.push("");
 if (process.env.GITHUB_STEP_SUMMARY) {
@@ -112,17 +112,16 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 }
 
 // 3. Readable log listing.
-console.log(`\nPi recipe check — ${pkg} (profile: ${report.profile || "?"})`);
+console.log(`\nRecipe check — ${pkg} (${manifests.length} recipe(s))`);
 for (const d of diagnostics) {
   const where = locOf(d);
   console.log(
-    `  ${d.severity}: ${d.code}: ${oneLine(d.message)}${
+    `  ${d.severity}: ${codeOf(d)}: ${oneLine(d.message)}${
       where ? ` (${where})` : ""
     }`
   );
   if (d.help) console.log(`    help: ${oneLine(d.help)}`);
 }
-if (resStr) console.log(`  resources: ${resStr}`);
 console.log(
   `\n${valid ? "PASS" : "FAIL"}: ${errors.length} error(s), ${
     warnings.length

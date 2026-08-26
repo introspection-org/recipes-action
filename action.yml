@@ -1,20 +1,16 @@
-name: Pi Recipes Check
-description: Validate a Pi recipe with the pi-recipes checker.
+name: Recipes Check
+description: Validate Introspection Recipes with the introspection CLI.
 author: Introspection
 branding:
   icon: check-circle
   color: blue
 inputs:
   recipe-dir:
-    description: Path to the recipe directory to validate.
+    description: Workspace root that Recipe manifests are discovered under.
     required: false
     default: "."
-  profile:
-    description: "Validation profile: local, ci, or publish."
-    required: false
-    default: "ci"
   version:
-    description: "Version of @introspection-ai/pi-recipes to run (latest = always newest)."
+    description: "Version of @introspection-ai/cli to run (latest = always newest)."
     required: false
     default: "latest"
   node-version:
@@ -32,19 +28,28 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
 
+    # The checker moved out of the npm package and into the CLI: the Recipes
+    # package intentionally ships no `recipes` executable any more, and
+    # `introspection check` is the supported validation command.
+    - name: Install the Introspection CLI
+      shell: bash
+      env:
+        CLI_VERSION: ${{ inputs.version }}
+      run: |
+        npm install -g "@introspection-ai/cli@${CLI_VERSION}"
+        echo "Using $(introspection --version)"
+
     - name: Run recipe check
       shell: bash
       env:
-        PI_RECIPES_VERSION: ${{ inputs.version }}
         RECIPE_DIR: ${{ inputs.recipe-dir }}
-        PROFILE: ${{ inputs.profile }}
+      # report.js is the gate, so never fail this step here (the redirect
+      # always writes the file, even on a non-zero exit). `-o json` puts pure
+      # JSON on stdout and the human summary on stderr, so the redirect stays
+      # parseable.
       run: |
-        resolved="$(npm view "@introspection-ai/pi-recipes@${PI_RECIPES_VERSION}" version 2>/dev/null || echo "${PI_RECIPES_VERSION}")"
-        echo "Using @introspection-ai/pi-recipes@${resolved}"
-        # Produce the machine-readable report; report.js is the gate, so never
-        # fail this step here (the redirect always writes the file, even on a
-        # non-zero exit).
-        npx -y -p "@introspection-ai/pi-recipes@${PI_RECIPES_VERSION}" recipes check "${RECIPE_DIR}" --profile "${PROFILE}" --json > "${RUNNER_TEMP}/recipe-check-report.json" || true
+        introspection check --work-dir "${RECIPE_DIR}" -o json \
+          > "${RUNNER_TEMP}/recipe-check-report.json" || true
         cp "${RUNNER_TEMP}/recipe-check-report.json" recipe-check-report.json || true
 
     - name: Annotate and summarize
@@ -52,7 +57,7 @@ runs:
       env:
         RECIPE_DIR: ${{ inputs.recipe-dir }}
       # Emits inline annotations + a job-summary table and exits non-zero when
-      # the recipe is invalid, which fails the composite action.
+      # a Recipe is invalid, which fails the composite action.
       run: node "${GITHUB_ACTION_PATH}/report.js" "${RUNNER_TEMP}/recipe-check-report.json"
 
     - name: Compute report artifact name

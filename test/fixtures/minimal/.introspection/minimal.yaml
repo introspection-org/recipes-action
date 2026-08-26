@@ -1,0 +1,6 @@
+name: minimal-fixture
+path: .
+description: Fixture recipe used by the action's self-test.
+runtime:
+  kind: byor
+  llm_mode: managed
