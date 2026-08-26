@@ -1,24 +1,20 @@
-name: Pi Recipes Check
-description: Validate a Pi recipe with the pi-recipes checker.
+name: Recipes Check
+description: Validate an Introspection Recipe with the introspection CLI.
 author: Introspection
 branding:
   icon: check-circle
   color: blue
 inputs:
   recipe-dir:
-    description: Path to the recipe directory to validate.
+    description: Path to the recipe workspace to validate.
     required: false
     default: "."
-  profile:
-    description: "Validation profile: local, ci, or publish."
-    required: false
-    default: "ci"
   version:
-    description: "Version of @introspection-ai/pi-recipes to run (latest = always newest)."
+    description: "Version of @introspection-ai/cli to run (latest = always newest)."
     required: false
     default: "latest"
   node-version:
-    description: Node.js version used to run the checker.
+    description: Node.js version used to run the CLI (requires Node 24+).
     required: false
     default: "24"
   upload-report:
@@ -35,16 +31,15 @@ runs:
     - name: Run recipe check
       shell: bash
       env:
-        PI_RECIPES_VERSION: ${{ inputs.version }}
+        INTROSPECTION_CLI_VERSION: ${{ inputs.version }}
         RECIPE_DIR: ${{ inputs.recipe-dir }}
-        PROFILE: ${{ inputs.profile }}
       run: |
-        resolved="$(npm view "@introspection-ai/pi-recipes@${PI_RECIPES_VERSION}" version 2>/dev/null || echo "${PI_RECIPES_VERSION}")"
-        echo "Using @introspection-ai/pi-recipes@${resolved}"
+        resolved="$(npm view "@introspection-ai/cli@${INTROSPECTION_CLI_VERSION}" version 2>/dev/null || echo "${INTROSPECTION_CLI_VERSION}")"
+        echo "Using @introspection-ai/cli@${resolved}"
         # Produce the machine-readable report; report.js is the gate, so never
         # fail this step here (the redirect always writes the file, even on a
         # non-zero exit).
-        npx -y -p "@introspection-ai/pi-recipes@${PI_RECIPES_VERSION}" recipes check "${RECIPE_DIR}" --profile "${PROFILE}" --json > "${RUNNER_TEMP}/recipe-check-report.json" || true
+        npx -y -p "@introspection-ai/cli@${INTROSPECTION_CLI_VERSION}" introspection check --work-dir "${RECIPE_DIR}" --output json --non-interactive > "${RUNNER_TEMP}/recipe-check-report.json" || true
         cp "${RUNNER_TEMP}/recipe-check-report.json" recipe-check-report.json || true
 
     - name: Annotate and summarize

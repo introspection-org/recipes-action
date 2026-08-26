@@ -6,7 +6,7 @@
   "bump-patch-for-minor-pre-major": true,
   "packages": {
     ".": {
-      "package-name": "pi-recipes-action"
+      "package-name": "recipes-action"
     }
   }
 }

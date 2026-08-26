@@ -2,7 +2,7 @@
   "name": "@introspection-recipes/minimal-fixture",
   "version": "0.0.0",
   "private": true,
-  "description": "Minimal fixture recipe used to smoke-test pi-recipes-action.",
+  "description": "Minimal fixture recipe used to smoke-test recipes-action.",
   "pi": {
     "agents": [
       "agents/*.yaml"

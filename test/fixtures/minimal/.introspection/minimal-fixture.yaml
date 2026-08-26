@@ -1,0 +1,5 @@
+name: minimal-fixture
+path: .
+description: Minimal fixture recipe used to smoke-test recipes-action
+runtime:
+  llm_mode: managed
