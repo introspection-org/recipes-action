@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/introspection-org/recipes-action/compare/v0.1.1...v0.2.0) (2026-08-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* the profile input is removed and version now selects @introspection-ai/cli instead of @introspection-ai/pi-recipes.
+
+### Features
+
+* run introspection check from @introspection-ai/cli; rename to recipes-action ([#6](https://github.com/introspection-org/recipes-action/issues/6)) ([40c6cc7](https://github.com/introspection-org/recipes-action/commit/40c6cc7cdfdd21ca635d4bae7f6f2f9ccc279bfb))
+
 ## [0.1.1](https://github.com/introspection-org/recipes-action/compare/v0.1.0...v0.1.1) (2026-07-19)
 
 
