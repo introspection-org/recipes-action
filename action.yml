@@ -22,7 +22,7 @@ inputs:
     required: false
     default: "true"
   comment:
-    description: On a pull request, post the result as a comment, updated in place on each run. Needs `pull-requests: write`; skipped with a notice without it.
+    description: "On a pull request, post the result as a comment, updated in place on each run. Needs `pull-requests: write`; skipped with a notice without it."
     required: false
     default: "true"
   github-token:
