@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/introspection-org/recipes-action/compare/v0.2.0...v0.2.1) (2026-11-12)
+
+
+### Features
+
+* post the recipe check result as a pull request comment ([#8](https://github.com/introspection-org/recipes-action/issues/8)) ([0792ab3](https://github.com/introspection-org/recipes-action/commit/0792ab30f1dfa6f9a48feb807027d1be9d4031e7))
+
 ## [0.2.0](https://github.com/introspection-org/recipes-action/compare/v0.1.1...v0.2.0) (2026-08-26)
 
 
