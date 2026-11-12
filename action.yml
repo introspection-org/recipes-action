@@ -21,6 +21,14 @@ inputs:
     description: Upload the JSON diagnostics report as a build artifact.
     required: false
     default: "true"
+  comment:
+    description: "On a pull request, post the result as a comment, updated in place on each run. Needs `pull-requests: write`; skipped with a notice without it."
+    required: false
+    default: "true"
+  github-token:
+    description: Token used to post the pull request comment.
+    required: false
+    default: ${{ github.token }}
 runs:
   using: composite
   steps:
@@ -42,12 +50,20 @@ runs:
         npx -y -p "@introspection-ai/cli@${INTROSPECTION_CLI_VERSION}" introspection check --work-dir "${RECIPE_DIR}" --output json --non-interactive > "${RUNNER_TEMP}/recipe-check-report.json" || true
         cp "${RUNNER_TEMP}/recipe-check-report.json" recipe-check-report.json || true
 
-    - name: Annotate and summarize
+    - name: Comment on the pull request
+      if: ${{ inputs.comment == 'true' && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') }}
       shell: bash
       env:
         RECIPE_DIR: ${{ inputs.recipe-dir }}
-      # Emits inline annotations + a job-summary table and exits non-zero when
-      # the recipe is invalid, which fails the composite action.
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: node "${GITHUB_ACTION_PATH}/comment.js" "${RUNNER_TEMP}/recipe-check-report.json"
+
+    - name: Report
+      shell: bash
+      env:
+        RECIPE_DIR: ${{ inputs.recipe-dir }}
+      # The CLI writes the annotations and the job summary; this lists the
+      # diagnostics in the log and fails the action when the recipe is invalid.
       run: node "${GITHUB_ACTION_PATH}/report.js" "${RUNNER_TEMP}/recipe-check-report.json"
 
     - name: Compute report artifact name
