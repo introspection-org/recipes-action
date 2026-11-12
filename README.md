@@ -104,16 +104,31 @@ jobs:
 | `version`       | `latest`                | Version of `@introspection-ai/cli` to run. `latest` always uses the newest published CLI; pin an exact version for reproducible CI. |
 | `node-version`  | `24`                    | Node.js version used to run the CLI (requires Node 24+).                    |
 | `upload-report` | `true`                  | Upload the JSON diagnostics report as a build artifact (`recipe-check-report`), even on failure. |
+| `comment`       | `true`                  | On a pull request, post the result as one comment, updated in place on each run. |
+| `github-token`  | `${{ github.token }}`   | Token used to post that comment. |
 
 ## Output
 
-Every diagnostic is surfaced four ways:
+Every diagnostic is surfaced five ways:
 
-- **Inline annotations** — each error/warning is emitted as a GitHub annotation,
-  so it shows up on the offending file in the PR "Files changed" tab and the
-  checks summary (with line/column when the diagnostic carries one).
-- **Job summary** — a Markdown table on the run's Summary page listing every
-  diagnostic (severity, check id, location, message) plus a pass/fail header.
+- **Pull request comment** — a table of every error and warning, with its
+  location and fix, posted on the pull request and updated in place on each
+  run. A passing run posts nothing unless an earlier run left a comment, which
+  it then marks passed. It needs `pull-requests: write`:
+
+  ```yaml
+  permissions:
+    contents: read
+    pull-requests: write
+  ```
+
+  Without it (and on pull requests from forks, whose token is read-only) the
+  comment is skipped with a notice.
+- **Inline annotations** — the CLI emits each error/warning as a GitHub
+  annotation, so it shows up on the offending file in the PR "Files changed"
+  tab and the checks summary (with line/column when the diagnostic carries one).
+- **Job summary** — the CLI writes a Markdown table of findings on the run's
+  Summary page.
 - **Step log** — a readable per-diagnostic listing in the action's log.
 - **JSON artifact** — when `upload-report` is `true`, the full machine-readable
   report (`introspection check --output json`) is written to
